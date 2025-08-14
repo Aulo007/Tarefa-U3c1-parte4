@@ -102,10 +102,10 @@ int main()
 
             if (display_mode == 0)
             { // Modo Cor
-                uint8_t r_cal, g_cal, b_cal;
-                gy33_get_calibrated_rgb(&r_cal, &g_cal, &b_cal);
-                draw_color_screen(&ssd, r_cal, g_cal, b_cal);
-                acender_led_rgb(r_cal, g_cal, b_cal);
+                uint8_t r_final, g_final, b_final;
+                gy33_get_final_rgb(&r_final, &g_final, &b_final);
+                draw_color_screen(&ssd, r_final, g_final, b_final);
+                acender_led_rgb(r_final, g_final, b_final);
             }
             else
             { // Modo Luz
@@ -142,7 +142,7 @@ void draw_color_screen(ssd1306_t *ssd, uint8_t r, uint8_t g, uint8_t b)
     sprintf(str_b, "B: %d", b);
 
     ssd1306_fill(ssd, false);
-    ssd1306_draw_string(ssd, "Cor Calibrada", 8, 6);
+    ssd1306_draw_string(ssd, "Cor Corrigida", 10, 6);
     ssd1306_draw_string(ssd, str_r, 10, 25);
     ssd1306_draw_string(ssd, str_g, 10, 38);
     ssd1306_draw_string(ssd, str_b, 10, 51);

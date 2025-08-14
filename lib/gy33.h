@@ -19,12 +19,12 @@ void gy33_calibrate_white(void);
 void gy33_calibrate_black(void);
 
 /**
- * @brief Reads the raw sensor data and calculates the calibrated RGB values based on the stored white and black references.
+ * @brief Applies black/white calibration and a color correction matrix to get the final, corrected RGB values.
  *
- * @param r Pointer to store the calibrated red value (0-255).
- * @param g Pointer to store the calibrated green value (0-255).
- * @param b Pointer to store the calibrated blue value (0-255).
+ * @param r Pointer to store the final red value (0-255).
+ * @param g Pointer to store the final green value (0-255).
+ * @param b Pointer to store the final blue value (0-255).
  */
-void gy33_get_calibrated_rgb(uint8_t *r, uint8_t *g, uint8_t *b);
+void gy33_get_final_rgb(uint8_t *r, uint8_t *g, uint8_t *b);
 
 #endif // GY33_H
