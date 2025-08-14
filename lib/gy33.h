@@ -5,18 +5,26 @@
 
 /**
  * @brief Initializes the I2C communication and the GY-33 sensor.
- * 
  */
 void gy33_init(void);
 
 /**
- * @brief Reads the color values from the GY-33 sensor.
- * 
- * @param r Pointer to store the red value.
- * @param g Pointer to store the green value.
- * @param b Pointer to store the blue value.
- * @param c Pointer to store the clear value.
+ * @brief Reads the current sensor values and stores them as the white reference.
  */
-void gy33_read_color(uint16_t *r, uint16_t *g, uint16_t *b, uint16_t *c);
+void gy33_calibrate_white(void);
+
+/**
+ * @brief Reads the current sensor values and stores them as the black reference.
+ */
+void gy33_calibrate_black(void);
+
+/**
+ * @brief Reads the raw sensor data and calculates the calibrated RGB values based on the stored white and black references.
+ *
+ * @param r Pointer to store the calibrated red value (0-255).
+ * @param g Pointer to store the calibrated green value (0-255).
+ * @param b Pointer to store the calibrated blue value (0-255).
+ */
+void gy33_get_calibrated_rgb(uint8_t *r, uint8_t *g, uint8_t *b);
 
 #endif // GY33_H
