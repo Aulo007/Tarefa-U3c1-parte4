@@ -38,17 +38,14 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 add_executable(main main.c
-        lib/aht20.c
-        lib/bmp280.c
         lib/ssd1306.c
         lib/buzzer.c
         lib/matrizRGB.c
         lib/leds.c
-        lib/lora.c
         lib/gy33.c
         lib/buttons.c
         lib/bh1750_light_sensor.c
-        )
+)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR})
 pico_set_program_name(main "main")
@@ -63,9 +60,9 @@ pico_enable_stdio_usb(main 1)
 target_link_libraries(main
         pico_stdlib
         hardware_i2c
-        hardware_adc   
-        hardware_pwm   
-        hardware_pio  
+        hardware_adc
+        hardware_pwm
+        hardware_pio
         hardware_spi)
 
 # Add the standard include files to the build
