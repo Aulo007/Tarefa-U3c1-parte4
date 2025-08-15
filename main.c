@@ -157,23 +157,47 @@ void draw_cal_screen(ssd1306_t *ssd, const char *line1, const char *line2)
 
 void draw_combined_screen(ssd1306_t *ssd, uint8_t r, uint8_t g, uint8_t b, uint16_t lux)
 {
-    char buffer[20];
+    ssd1306_fill(ssd, false); // Limpa a tela no início de cada desenho
 
-    ssd1306_fill(ssd, false); // Limpa a tela
+    bool low_light = (lux < 20);
+    bool intense_red = (r > 200 && r > g * 2 && r > b * 2);
 
-    // Mostra os valores de R, G, B, um por linha
-    sprintf(buffer, "R: %d", r);
-    ssd1306_draw_string(ssd, buffer, 10, 5);
+    // Verifica se há alguma condição de alerta
+    if (low_light || intense_red)
+    {
+        // MODO DE ALERTA: A tela é dedicada apenas às mensagens.
+        ssd1306_draw_string(ssd, "--- ALERTA ---", 12, 5);
 
-    sprintf(buffer, "G: %d", g);
-    ssd1306_draw_string(ssd, buffer, 10, 18);
-
-    sprintf(buffer, "B: %d", b);
-    ssd1306_draw_string(ssd, buffer, 10, 31);
-
-    // Mostra o valor de Lux
-    sprintf(buffer, "Lux: %d", lux);
-    ssd1306_draw_string(ssd, buffer, 10, 48);
+        if (low_light && intense_red)
+        {
+            // Mostra ambos os alertas
+            ssd1306_draw_string(ssd, "Luz Baixa", 28, 25);
+            ssd1306_draw_string(ssd, "Cor Intensa", 24, 40);
+        }
+        else if (low_light)
+        {
+            // Mostra apenas o alerta de luz baixa
+            ssd1306_draw_string(ssd, "Luz Baixa Detectada", 4, 30);
+        }
+        else
+        { // intense_red deve ser verdadeiro
+            // Mostra apenas o alerta de cor intensa
+            ssd1306_draw_string(ssd, "Cor Intensa Detectada", 0, 30);
+        }
+    }
+    else
+    {
+        // MODO NORMAL: Mostra os dados dos sensores, pois não há alertas.
+        char buffer[20];
+        sprintf(buffer, "R: %d", r);
+        ssd1306_draw_string(ssd, buffer, 10, 5);
+        sprintf(buffer, "G: %d", g);
+        ssd1306_draw_string(ssd, buffer, 10, 18);
+        sprintf(buffer, "B: %d", b);
+        ssd1306_draw_string(ssd, buffer, 10, 31);
+        sprintf(buffer, "Lux: %d", lux);
+        ssd1306_draw_string(ssd, buffer, 10, 48);
+    }
 
     ssd1306_send_data(ssd);
 }
