@@ -11,6 +11,7 @@
 #include "buttons.h"
 #include "leds.h"
 #include "buzzer.h"
+#include "matrizRGB.h"
 
 // --- Pinos ---
 #define BUZZER_PIN 21
@@ -40,15 +41,18 @@ AppState current_state = STATE_CALIBRATE_WHITE;
 void draw_cal_screen(ssd1306_t *ssd, const char *line1, const char *line2);
 void draw_combined_screen(ssd1306_t *ssd, uint8_t r, uint8_t g, uint8_t b, uint16_t lux);
 
+void btn_callback(uint gpio, uint32_t events);
+
 int main()
 {
     stdio_init_all();
     sleep_ms(2000);
 
     // Inicializa periféricos
-    buttons_init();
+    buttons_init(btn_callback);
     led_init();
     gy33_init();
+    npInit(7);
     inicializar_buzzer(BUZZER_PIN);
 
     // I2C para BH1750
@@ -76,23 +80,11 @@ int main()
         case STATE_CALIBRATE_WHITE:
         {
             draw_cal_screen(&ssd, "Calibrar BRANCO", "Aperte A");
-            if (gpio_get(BUTTON_A_PIN) == 0)
-            { // Botão pressionado (pull-up)
-                gy33_calibrate_white();
-                current_state = STATE_CALIBRATE_BLACK;
-                sleep_ms(500); // Debounce
-            }
             break;
         }
         case STATE_CALIBRATE_BLACK:
         {
             draw_cal_screen(&ssd, "Calibrar PRETO", "Aperte A");
-            if (gpio_get(BUTTON_A_PIN) == 0)
-            {
-                gy33_calibrate_black();
-                current_state = STATE_RUNNING;
-                sleep_ms(500); // Debounce
-            }
             break;
         }
         case STATE_RUNNING:
@@ -107,6 +99,7 @@ int main()
 
             // Mantém a lógica dos LEDs e alarmes
             acender_led_rgb(r_final, g_final, b_final);
+            npFillRGB(r_final, g_final, b_final);
 
             // Alerta para vermelho intenso
             if (r_final > 200 && r_final > g_final * 2 && r_final > b_final * 2)
@@ -123,11 +116,33 @@ int main()
         }
         }
         // BOOTSEL pode ser checado a qualquer momento
-        if (gpio_get(BUTTON_B_PIN) == 0)
-        {
-            reset_usb_boot(0, 0);
-        }
+
         sleep_ms(100);
+    }
+}
+
+void btn_callback(uint gpio, uint32_t events)
+{
+    switch (gpio)
+    {
+    case BUTTON_A_PIN:
+        if (current_state == STATE_CALIBRATE_WHITE)
+        {
+            gy33_calibrate_white();
+            current_state = STATE_CALIBRATE_BLACK;
+        }
+        else if (current_state == STATE_CALIBRATE_BLACK)
+        {
+            gy33_calibrate_black();
+            current_state = STATE_RUNNING;
+        }
+        break;
+    case BUTTON_B_PIN:
+        reset_usb_boot(0, 0);
+        break;
+    case BUTTON_C_PIN:
+
+        break;
     }
 }
 

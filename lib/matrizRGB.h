@@ -199,6 +199,18 @@ void npSetDiagonal(bool mainDiagonal, npColor_t color);
 void npFill(npColor_t color);
 
 /**
+ * @brief Preenche toda a matriz com uma cor específica a partir de componentes RGB
+ *
+ * Esta é uma função de conveniência que cria a cor e chama npFill().
+ * Esta função também atualiza o hardware automaticamente.
+ *
+ * @param r Componente vermelho (0-255)
+ * @param g Componente verde (0-255)
+ * @param b Componente azul (0-255)
+ */
+void npFillRGB(uint8_t r, uint8_t g, uint8_t b);
+
+/**
  * @brief Preenche toda a matriz com uma cor e intensidade específicas
  *
  * Esta função também atualiza o hardware automaticamente.

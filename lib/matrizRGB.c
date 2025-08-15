@@ -241,6 +241,38 @@ void npFill(npColor_t color)
     npWrite(); // Atualiza o hardware
 }
 
+void npFillRGB(uint8_t r, uint8_t g, uint8_t b)
+{
+    // --- Filtro de Ruído de Cor ---
+    // Se um canal de cor é muito dominante (alto) e os outros são muito fracos (baixo),
+    // os canais fracos são zerados para "purificar" a cor principal.
+    const int ALTO_LIMITE = 220; // Limite para considerar um canal como dominante.
+    const int BAIXO_LIMITE = 10;  // Limite para considerar um canal como ruído.
+
+    uint8_t r_final = r;
+    uint8_t g_final = g;
+    uint8_t b_final = b;
+
+    // Caso 1: Vermelho é a cor dominante e clara
+    if (r > ALTO_LIMITE && g < BAIXO_LIMITE && b < BAIXO_LIMITE) {
+        g_final = 0;
+        b_final = 0;
+    }
+    // Caso 2: Verde é a cor dominante e clara
+    else if (g > ALTO_LIMITE && r < BAIXO_LIMITE && b < BAIXO_LIMITE) {
+        r_final = 0;
+        b_final = 0;
+    }
+    // Caso 3: Azul é a cor dominante e clara
+    else if (b > ALTO_LIMITE && r < BAIXO_LIMITE && g < BAIXO_LIMITE) {
+        r_final = 0;
+        g_final = 0;
+    }
+
+    npColor_t color = {r_final, g_final, b_final};
+    npFill(color);
+}
+
 void npFillIntensity(npColor_t color, float intensity)
 {
     intensity = clampIntensity(intensity);
