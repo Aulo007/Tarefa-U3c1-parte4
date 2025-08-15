@@ -3,11 +3,13 @@
 
 #include "pico/stdlib.h"
 
-#define BUZZER_FREQUENCY 100  // Pode ser ajustado se quiser configurar externamente
+#define BUZZER_FREQUENCY 100 // Pode ser ajustado se quiser configurar externamente
 
 void inicializar_buzzer(uint pino);
 void ativar_buzzer_com_intensidade(uint pino, float intensidade);
 void ativar_buzzer(uint pino);
 void desativar_buzzer(uint pino);
+void toque_1(uint pino);
+void toque_2(uint pino);
 
 #endif // BUZZER_H

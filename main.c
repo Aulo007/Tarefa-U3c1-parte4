@@ -10,6 +10,10 @@
 #include "bh1750_light_sensor.h"
 #include "buttons.h"
 #include "leds.h"
+#include "buzzer.h"
+
+// --- Pinos ---
+#define BUZZER_PIN 21
 
 // --- I2C e Display ---
 #define I2C_PORT_DISP i2c1
@@ -31,12 +35,10 @@ typedef enum
 } AppState;
 
 AppState current_state = STATE_CALIBRATE_WHITE;
-int display_mode = 0; // 0: Cor, 1: Luz
 
 // --- Protótipos das Funções de Desenho ---
 void draw_cal_screen(ssd1306_t *ssd, const char *line1, const char *line2);
-void draw_color_screen(ssd1306_t *ssd, uint8_t r, uint8_t g, uint8_t b);
-void draw_light_screen(ssd1306_t *ssd, uint16_t lux);
+void draw_combined_screen(ssd1306_t *ssd, uint8_t r, uint8_t g, uint8_t b, uint16_t lux);
 
 int main()
 {
@@ -47,6 +49,7 @@ int main()
     buttons_init();
     led_init();
     gy33_init();
+    inicializar_buzzer(BUZZER_PIN);
 
     // I2C para BH1750
     i2c_init(I2C_PORT_BH1750, 100 * 1000);
@@ -94,24 +97,27 @@ int main()
         }
         case STATE_RUNNING:
         {
-            if (gpio_get(BUTTON_C_PIN) == 0)
+            // Lê ambos os sensores em cada ciclo
+            uint8_t r_final, g_final, b_final;
+            gy33_get_final_rgb(&r_final, &g_final, &b_final);
+            uint16_t lux = bh1750_read_measurement(I2C_PORT_BH1750);
+
+            // Atualiza o display com a tela combinada
+            draw_combined_screen(&ssd, r_final, g_final, b_final, lux);
+
+            // Mantém a lógica dos LEDs e alarmes
+            acender_led_rgb(r_final, g_final, b_final);
+
+            // Alerta para vermelho intenso
+            if (r_final > 200 && r_final > g_final * 2 && r_final > b_final * 2)
             {
-                display_mode = !display_mode;
-                sleep_ms(250); // Debounce
+                toque_2(BUZZER_PIN);
             }
 
-            if (display_mode == 0)
-            { // Modo Cor
-                uint8_t r_final, g_final, b_final;
-                gy33_get_final_rgb(&r_final, &g_final, &b_final);
-                draw_color_screen(&ssd, r_final, g_final, b_final);
-                acender_led_rgb(r_final, g_final, b_final);
-            }
-            else
-            { // Modo Luz
-                uint16_t lux = bh1750_read_measurement(I2C_PORT_BH1750);
-                draw_light_screen(&ssd, lux);
-                turn_off_leds();
+            // Alerta para baixa luminosidade
+            if (lux < 20)
+            {
+                toque_1(BUZZER_PIN);
             }
             break;
         }
@@ -134,30 +140,25 @@ void draw_cal_screen(ssd1306_t *ssd, const char *line1, const char *line2)
     ssd1306_send_data(ssd);
 }
 
-void draw_color_screen(ssd1306_t *ssd, uint8_t r, uint8_t g, uint8_t b)
+void draw_combined_screen(ssd1306_t *ssd, uint8_t r, uint8_t g, uint8_t b, uint16_t lux)
 {
-    char str_r[10], str_g[10], str_b[10];
-    sprintf(str_r, "R: %d", r);
-    sprintf(str_g, "G: %d", g);
-    sprintf(str_b, "B: %d", b);
+    char buffer[20];
 
-    ssd1306_fill(ssd, false);
-    ssd1306_draw_string(ssd, "Cor Corrigida", 10, 6);
-    ssd1306_draw_string(ssd, str_r, 10, 25);
-    ssd1306_draw_string(ssd, str_g, 10, 38);
-    ssd1306_draw_string(ssd, str_b, 10, 51);
-    ssd1306_send_data(ssd);
-}
+    ssd1306_fill(ssd, false); // Limpa a tela
 
-void draw_light_screen(ssd1306_t *ssd, uint16_t lux)
-{
-    char str_lux[15];
-    sprintf(str_lux, "%d Lux", lux);
+    // Mostra os valores de R, G, B, um por linha
+    sprintf(buffer, "R: %d", r);
+    ssd1306_draw_string(ssd, buffer, 10, 5);
 
-    ssd1306_fill(ssd, false);
-    ssd1306_draw_string(ssd, "Sensor de Luz", 8, 6);
-    ssd1306_draw_string(ssd, "BH1750", 35, 16);
-    ssd1306_line(ssd, 3, 28, 123, 28, true);
-    ssd1306_draw_string(ssd, str_lux, 25, 40);
+    sprintf(buffer, "G: %d", g);
+    ssd1306_draw_string(ssd, buffer, 10, 18);
+
+    sprintf(buffer, "B: %d", b);
+    ssd1306_draw_string(ssd, buffer, 10, 31);
+
+    // Mostra o valor de Lux
+    sprintf(buffer, "Lux: %d", lux);
+    ssd1306_draw_string(ssd, buffer, 10, 48);
+
     ssd1306_send_data(ssd);
 }
