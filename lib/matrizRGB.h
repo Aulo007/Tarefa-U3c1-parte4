@@ -4,11 +4,11 @@
  *
  * Esta biblioteca fornece funções para controlar uma matriz 5x5 de LEDs RGB WS2812B
  * conectados a um Raspberry Pi Pico. Implementa funções para manipulação de cores,
- * padrões e animações em uma matriz 5x5.
+ * padrões, animações e um sistema avançado de correção de cor.
  *
- * @author [Seu Nome]
- * @date [Data]
- * @version 2.0
+ * @author [Aulo Cezar]
+ * @date [01/05/2025]
+ * @version 2.1
  */
 
 #ifndef MATRIZ_RGB_H_
@@ -53,11 +53,12 @@ typedef struct
 /**
  * @brief Cores predefinidas para uso conveniente
  */
+// CORRIGIDO: Valores ajustados de 1 para 255 para intensidade máxima
 #define COLOR_BLACK (npColor_t){0, 0, 0}
-#define COLOR_RED (npColor_t){1, 0, 0}
-#define COLOR_GREEN (npColor_t){0, 1, 0}
-#define COLOR_BLUE (npColor_t){0, 0, 1}
-#define COLOR_WHITE (npColor_t){1, 1, 1}
+#define COLOR_RED (npColor_t){255, 0, 0}
+#define COLOR_GREEN (npColor_t){0, 255, 0}
+#define COLOR_BLUE (npColor_t){0, 0, 255}
+#define COLOR_WHITE (npColor_t){255, 255, 255}
 #define COLOR_YELLOW (npColor_t){255, 170, 0}
 #define COLOR_CYAN (npColor_t){0, 255, 255}
 #define COLOR_MAGENTA (npColor_t){255, 0, 255}
@@ -74,6 +75,8 @@ extern const npColor_t npColors[];
 
 /** @brief Array contendo o estado atual de todos os LEDs da matriz */
 extern npLED_t leds[NP_LED_COUNT];
+
+// --- Funções de Inicialização e Controle Básico ---
 
 /**
  * @brief Inicializa a matriz de LEDs RGB
@@ -100,6 +103,30 @@ void npWrite(void);
  */
 void npClear(void);
 
+// --- Funções de Correção de Cor (ADICIONADAS) ---
+
+/**
+ * @brief Configura os parâmetros de correção de cor.
+ * @param gamma Valor da correção gamma (ex: 2.2).
+ * @param noise_threshold Limite para filtro de ruído (0-255).
+ * @param color_dominance_ratio Razão para purificação de cor (ex: 8.0).
+ * @param enable_gamma Habilita/desabilita correção gamma.
+ * @param enable_noise Habilita/desabilita filtro de ruído.
+ * @param enable_purification Habilita/desabilita purificação de cor.
+ */
+void npSetColorCorrectionConfig(float gamma, uint8_t noise_threshold,
+                                float color_dominance_ratio,
+                                bool enable_gamma, bool enable_noise,
+                                bool enable_purification);
+
+/**
+ * @brief Configura um modo predefinido de correção de cor.
+ * @param mode 0: Desabilitado, 1: Suave, 2: Normal, 3: Agressivo, 4: Muito Agressivo.
+ */
+void npSetColorCorrectionMode(int mode);
+
+// --- Funções de Manipulação de LEDs Individuais ---
+
 /**
  * @brief Verifica se uma posição (x,y) é válida na matriz
  *
@@ -110,7 +137,7 @@ void npClear(void);
 bool npIsPositionValid(int x, int y);
 
 /**
- * @brief Define a cor de um LED específico na matriz
+ * @brief Define a cor de um LED específico na matriz, aplicando correção de cor.
  *
  * @param x Coordenada horizontal (0-4)
  * @param y Coordenada vertical (0-4)
@@ -119,7 +146,17 @@ bool npIsPositionValid(int x, int y);
 void npSetLED(int x, int y, npColor_t color);
 
 /**
- * @brief Define a cor de um LED específico com intensidade ajustável
+ * @brief Define a cor de um LED específico SEM aplicar correção de cor.
+ *
+ * @param x Coordenada horizontal (0-4)
+ * @param y Coordenada vertical (0-4)
+ * @param color Cor "crua" a ser aplicada ao LED.
+ */
+void npSetLEDRaw(int x, int y, npColor_t color);
+
+/**
+ * @brief Define a cor de um LED específico com intensidade ajustável.
+ * A correção de cor é aplicada após o ajuste de intensidade.
  *
  * @param x Coordenada horizontal (0-4)
  * @param y Coordenada vertical (0-4)
@@ -128,21 +165,17 @@ void npSetLED(int x, int y, npColor_t color);
  */
 void npSetLEDIntensity(int x, int y, npColor_t color, float intensity);
 
+// --- Funções de Manipulação de Grupos de LEDs ---
+
 /**
- * @brief Preenche toda uma linha com uma cor específica
- *
- * Esta função também atualiza o hardware automaticamente.
- *
+ * @brief Preenche toda uma linha com uma cor específica.
  * @param row Índice da linha (0-4)
  * @param color Cor a ser aplicada a toda a linha
  */
 void npSetRow(int row, npColor_t color);
 
 /**
- * @brief Preenche toda uma linha com uma cor e intensidade específicas
- *
- * Esta função também atualiza o hardware automaticamente.
- *
+ * @brief Preenche toda uma linha com uma cor e intensidade específicas.
  * @param row Índice da linha (0-4)
  * @param color Cor base a ser aplicada
  * @param intensity Intensidade da cor (0.0 - 1.0)
@@ -150,20 +183,14 @@ void npSetRow(int row, npColor_t color);
 void npSetRowIntensity(int row, npColor_t color, float intensity);
 
 /**
- * @brief Preenche toda uma coluna com uma cor específica
- *
- * Esta função também atualiza o hardware automaticamente.
- *
+ * @brief Preenche toda uma coluna com uma cor específica.
  * @param col Índice da coluna (0-4)
  * @param color Cor a ser aplicada a toda a coluna
  */
 void npSetColumn(int col, npColor_t color);
 
 /**
- * @brief Preenche toda uma coluna com uma cor e intensidade específicas
- *
- * Esta função também atualiza o hardware automaticamente.
- *
+ * @brief Preenche toda uma coluna com uma cor e intensidade específicas.
  * @param col Índice da coluna (0-4)
  * @param color Cor base a ser aplicada
  * @param intensity Intensidade da cor (0.0 - 1.0)
@@ -171,39 +198,28 @@ void npSetColumn(int col, npColor_t color);
 void npSetColumnIntensity(int col, npColor_t color, float intensity);
 
 /**
- * @brief Preenche a borda da matriz com uma cor específica
- *
- * Esta função também atualiza o hardware automaticamente.
- *
+ * @brief Preenche a borda da matriz com uma cor específica.
  * @param color Cor a ser aplicada à borda da matriz
  */
 void npSetBorder(npColor_t color);
 
 /**
- * @brief Preenche uma diagonal da matriz com uma cor específica
- *
- * Esta função também atualiza o hardware automaticamente.
- *
- * @param mainDiagonal true para a diagonal principal, false para a diagonal secundária
+ * @brief Preenche uma diagonal da matriz com uma cor específica.
+ * @param mainDiagonal true para a diagonal principal, false para a secundária
  * @param color Cor a ser aplicada à diagonal
  */
 void npSetDiagonal(bool mainDiagonal, npColor_t color);
 
+// --- Funções de Preenchimento Total da Matriz ---
+
 /**
- * @brief Preenche toda a matriz com uma cor específica
- *
- * Esta função também atualiza o hardware automaticamente.
- *
+ * @brief Preenche toda a matriz com uma cor específica, aplicando correção.
  * @param color Cor a ser aplicada a todos os LEDs
  */
 void npFill(npColor_t color);
 
 /**
- * @brief Preenche toda a matriz com uma cor específica a partir de componentes RGB
- *
- * Esta é uma função de conveniência que cria a cor e chama npFill().
- * Esta função também atualiza o hardware automaticamente.
- *
+ * @brief Preenche toda a matriz com uma cor (RGB), aplicando correção.
  * @param r Componente vermelho (0-255)
  * @param g Componente verde (0-255)
  * @param b Componente azul (0-255)
@@ -211,35 +227,41 @@ void npFill(npColor_t color);
 void npFillRGB(uint8_t r, uint8_t g, uint8_t b);
 
 /**
- * @brief Preenche toda a matriz com uma cor e intensidade específicas
- *
- * Esta função também atualiza o hardware automaticamente.
- *
+ * @brief Preenche toda a matriz com uma cor (RGB) SEM aplicar correção.
+ * @param r Componente vermelho (0-255)
+ * @param g Componente verde (0-255)
+ * @param b Componente azul (0-255)
+ */
+void npFillRGBRaw(uint8_t r, uint8_t g, uint8_t b);
+
+/**
+ * @brief Preenche toda a matriz com uma cor e intensidade específicas.
  * @param color Cor base a ser aplicada
  * @param intensity Intensidade da cor (0.0 - 1.0)
  */
 void npFillIntensity(npColor_t color, float intensity);
 
+// --- Funções de Animação e Desenho ---
+
 /**
- * @brief Define o estado da matriz a partir de uma matriz de cores 5x5
+ * @brief Define o estado da matriz a partir de uma matriz de cores 5x5.
+ * A intensidade é aplicada e a correção de cor é processada para cada LED.
  *
- * Esta função também atualiza o hardware automaticamente.
- *
- * @param matrix Matriz 5x5 contendo as cores para cada posição
+ * @param matriz Matriz 5x5x3 [linha][coluna][cor]
  * @param intensity Intensidade a ser aplicada a todas as cores (0.0 - 1.0)
  */
 void npSetMatrixWithIntensity(int matriz[NP_MATRIX_HEIGHT][NP_MATRIX_WIDTH][3], float intensity);
 
 /**
- * @brief Reproduz uma sequência de frames como uma animação
+ * @brief Reproduz uma sequência de frames como uma animação.
  *
  * @param period Tempo em milissegundos entre cada frame
  * @param num_frames Número de frames na animação
- * @param frames Array de matrizes 5x5 representando cada frame
+ * @param desenho Array de matrizes [frame][linha][coluna][cor]
  * @param intensity Intensidade a ser aplicada a todas as cores (0.0 - 1.0)
  */
 void npAnimateFrames(int period, int num_frames,
-                     int matriz[num_frames][NP_MATRIX_HEIGHT][NP_MATRIX_WIDTH][3],
+                     int desenho[num_frames][NP_MATRIX_HEIGHT][NP_MATRIX_WIDTH][3],
                      float intensity);
 
 #endif /* MATRIZ_RGB_H_ */
